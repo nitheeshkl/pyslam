@@ -31,3 +31,6 @@
 [submodule "thirdparty/disk"]
 	path = thirdparty/disk
 	url = https://github.com/cvlab-epfl/disk.git
+[submodule "thirdparty/monodepth2"]
+	path = thirdparty/monodepth2
+	url = https://github.com/nianticlabs/monodepth2.git
