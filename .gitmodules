@@ -31,3 +31,9 @@
 [submodule "thirdparty/disk"]
 	path = thirdparty/disk
 	url = https://github.com/cvlab-epfl/disk.git
+[submodule "thirdparty/mseg-api"]
+	path = thirdparty/mseg-api
+	url = https://github.com/mseg-dataset/mseg-api.git
+[submodule "thirdparty/mseg-semantic"]
+	path = thirdparty/mseg-semantic
+	url = git@github.com:nitheeshkl/mseg-semantic.git
