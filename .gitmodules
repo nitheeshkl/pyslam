@@ -36,5 +36,5 @@
 	url = https://github.com/mseg-dataset/mseg-api.git
 [submodule "thirdparty/mseg-semantic"]
 	path = thirdparty/mseg-semantic
-	url = git@github.com:nitheeshkl/mseg-semantic.git
+	url = https://github.com/nitheeshkl/mseg-semantic.git
 	branch = van
