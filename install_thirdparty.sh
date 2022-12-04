@@ -129,6 +129,7 @@ if [ ! -d g2opy ]; then
     rsync ./g2opy_changes/sparse_optimizer.h ./g2opy/python/core/sparse_optimizer.h   
     rsync ./g2opy_changes/python_CMakeLists.txt ./g2opy/python/CMakeLists.txt    
     rsync ./g2opy_changes/eigen_types.h ./g2opy/python/core/eigen_types.h      
+    rsync ./g2opy_changes/setup.py ./g2opy/setup.py
 fi
 cd g2opy
 if [ ! -f lib/g2o.cpython-*.so ]; then  
