@@ -61,7 +61,8 @@ if [ $INSTALL_PANGOLIN_ORIGINAL -eq 1 ] ; then
     # N.B.: pay attention this will generate a module 'pypangolin' ( it does not have the methods dcam.SetBounds(...) and pangolin.DrawPoints(points, colors)  )
     if [ ! -d pangolin ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            sudo apt-get install -y libglew-dev
+            # sudo apt-get install -y libglew-dev
+            apt-get install -y libglew-dev
         fi     
         git clone https://github.com/stevenlovegrove/Pangolin.git pangolin
         cd pangolin
@@ -81,7 +82,8 @@ else
     # N.B.: pay attention this will generate a module 'pangolin' 
     if [ ! -d pangolin ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then    
-            sudo apt-get install -y libglew-dev
+            # sudo apt-get install -y libglew-dev
+            apt-get install -y libglew-dev
             # git clone https://github.com/uoip/pangolin.git
             # cd pangolin
             # PANGOLIN_UOIP_REVISION=3ac794a
@@ -114,7 +116,8 @@ print_blue "Configuring and building thirdparty/g2o ..."
 cd thirdparty
 if [ ! -d g2opy ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        sudo apt-get install -y libsuitesparse-dev libeigen3-dev
+        #sudo apt-get install -y libsuitesparse-dev libeigen3-dev
+        apt-get install -y libsuitesparse-dev libeigen3-dev
     fi     
 	git clone https://github.com/uoip/g2opy.git
     cd g2opy
