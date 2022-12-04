@@ -37,3 +37,4 @@
 [submodule "thirdparty/mseg-semantic"]
 	path = thirdparty/mseg-semantic
 	url = git@github.com:nitheeshkl/mseg-semantic.git
+	branch = van
