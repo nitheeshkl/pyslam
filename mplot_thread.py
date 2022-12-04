@@ -258,7 +258,8 @@ class Mplot3d:
             self.fig.canvas.draw_idle()         
         self.fig.canvas.mpl_connect('key_press_event', self.on_key_press)       
         self.fig.canvas.mpl_connect('key_release_event', self.on_key_release)             
-        self.ax = self.fig.gca(projection='3d')
+        # self.ax = self.fig.gca(projection='3d')
+        self.ax = self.fig.add_subplot(111)   
         if self.title is not '':
             self.ax.set_title(self.title)     
         self.ax.set_xlabel('X axis')
