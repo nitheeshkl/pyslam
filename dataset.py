@@ -392,7 +392,16 @@ class TumDataset(Dataset):
             self.associations = f.readlines()
             self.max_frame_id = len(self.associations)           
         if self.associations is None:
-            sys.exit('ERROR while reading associations file!')    
+            sys.exit('ERROR while reading associations file!')
+
+        # -------------------
+        gtpose_file = self.path + '/' + self.name + '/groundtruth.txt'
+        with open(gtpose_file) as f:
+            self.gt_traj = f.readlines()
+            self.gt_traj = self.gt_traj[3:]
+        if self.gt_traj is None:
+            sys.exit('ERROR while reading groundtruth file!')
+
 
     def getImage(self, frame_id):
         img = None
@@ -414,7 +423,7 @@ class TumDataset(Dataset):
         img = None
         if frame_id < self.max_frame_id:
             file = self.base_path + self.associations[frame_id].strip().split()[3]
-            img = cv2.imread(file)
+            img = cv2.imread(file, cv2.IMREAD_ANYDEPTH)
             self.is_ok = (img is not None)
             self._timestamp = float(self.associations[frame_id].strip().split()[0])
             if frame_id +1 < self.max_frame_id: 
@@ -425,3 +434,41 @@ class TumDataset(Dataset):
             self.is_ok = False      
             self._timestamp = None                       
         return img 
+    
+    def getPose(self, frame_id):
+        pose = None
+        if frame_id < self.max_frame_id:
+            trans = self.gt_traj[frame_id].strip().split()[1:4]
+            trans = [float(f) for f in trans]
+            rot = self.gt_traj[frame_id].strip().split()[4:]
+            rot = [float(f) for f in rot]
+            
+            self._timestamp = float(self.associations[frame_id].strip().split()[0])
+            if frame_id +1 < self.max_frame_id: 
+                self._next_timestamp = float(self.associations[frame_id+1].strip().split()[0])
+            else:
+                self._next_timestamp = self.timestamps               
+        else:
+            self.is_ok = False      
+            self._timestamp = None                       
+        return trans, rot
+
+    def getMask(self, frame_id):
+        img = None
+        if frame_id < self.max_frame_id:
+            file = self.base_path + self.associations[frame_id].strip().split()[1].replace('rgb', 'mask')
+            print("Trying to load: ", file)
+            img = cv2.imread(file, cv2.IMREAD_ANYDEPTH).astype(np.uint8)
+            self.is_ok = (img is not None)
+            self._timestamp = float(self.associations[frame_id].strip().split()[0])
+            if frame_id +1 < self.max_frame_id: 
+                self._next_timestamp = float(self.associations[frame_id+1].strip().split()[0])
+            else:
+
+                self._next_timestamp = self.timestamps             
+        else:
+            self.is_ok = False     
+            self._timestamp = None       
+
+        img = cv2.resize(img, ((640, 480)), interpolation=cv2.INTER_NEAREST)           
+        return img

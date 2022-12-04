@@ -20,6 +20,9 @@
 import numpy as np
 import cv2
 import math
+import time
+
+from plotly import data
 
 from config import Config
 
@@ -101,10 +104,11 @@ if __name__ == "__main__":
     while dataset.isOk():
 
         img = dataset.getImage(img_id)
+        mask = dataset.getMask(img_id)
 
         if img is not None:
 
-            vo.track(img, img_id)  # main VO function 
+            vo.track(img, img_id, mask)  # main VO function 
 
             if(img_id > 2):	       # start drawing from the third image (when everything is initialized and flows in a normal way)
 
@@ -149,12 +153,14 @@ if __name__ == "__main__":
 
 
             # draw camera image 
-            cv2.imshow('Camera', vo.draw_img)				
+            cv2.imshow('Camera', vo.draw_img)	
+
 
         # press 'q' to exit!
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         img_id += 1
+
 
     #print('press a key in order to exit...')
     #cv2.waitKey(0)

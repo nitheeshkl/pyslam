@@ -178,16 +178,35 @@ class VisualOdometry(object):
         self.draw_img = self.drawFeatureTracks(self.cur_image) 
         # check if we have enough features to track otherwise detect new ones and start tracking from them (used for LK tracker) 
         if (self.feature_tracker.tracker_type == FeatureTrackerTypes.LK) and (self.kps_ref.shape[0] < self.feature_tracker.num_features): 
-            self.kps_cur, self.des_cur = self.feature_tracker.detectAndCompute(self.cur_image)           
+            self.kps_cur, self.des_cur = self.feature_tracker.detectAndCompute(self.cur_image, mask = (self.cur_mask == 0).astype(np.uint8))
             self.kps_cur = np.array([x.pt for x in self.kps_cur], dtype=np.float32) # convert from list of keypoints to an array of points   
             if kVerbose:     
                 print('# new detected points: ', self.kps_cur.shape[0])                  
-        self.kps_ref = self.kps_cur
-        self.des_ref = self.des_cur
+        
+        bg_mask = (self.cur_mask == 0)
+        #bg_mask = np.ones_like(bg_mask)
+        print(self.kps_cur.shape, self.kps_cur[:, 0].max(), self.kps_cur[:, 1].max(), self.cur_mask.shape)
+
+        print("Total bg pixels: ", bg_mask.sum(), np.prod(bg_mask.shape))
+        self.filtered_kps = [kp for kp in self.kps_cur if bg_mask[int(kp[1]), int(kp[0])]]
+        self.filtered_kps = np.array(self.filtered_kps)
+
+        #self.filtered_kps = self.kps_cur
+
+        print("Des cur is: ", self.des_cur)
+        if self.des_cur:
+            self.des_cur = [d for i, d in enumerate(self.des_cur) if bg_mask[int(self.kps_cur[i, 1]), int(self.kps_cur[i, 0])]]
+            self.des_ref = np.array(self.des_cur)
+
+
+        print("Keypoints after filtering: ", len(self.filtered_kps))
+
+        self.kps_ref = self.filtered_kps
+
         self.updateHistory()           
         
 
-    def track(self, img, frame_id):
+    def track(self, img, frame_id, mask):
         if kVerbose:
             print('..................................')
             print('frame: ', frame_id) 
@@ -197,6 +216,7 @@ class VisualOdometry(object):
         # check coherence of image size with camera settings 
         #assert(img.ndim==2 and img.shape[0]==self.cam.height and img.shape[1]==self.cam.width), "Frame: provided image has not the same size as the camera model or image is not grayscale"
         self.cur_image = img
+        self.cur_mask = mask
         # manage and check stage 
         if(self.stage == VoStage.GOT_FIRST_IMAGE):
             self.processFrame(frame_id)
