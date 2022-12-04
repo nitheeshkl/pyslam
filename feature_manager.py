@@ -37,7 +37,12 @@ from pyramid import Pyramid, PyramidType
 
 from feature_root_sift import RootSIFTFeature2D
 from feature_shitomasi import ShiTomasiDetector
-    
+
+sys.path.append('./third_party/mseg-semantic/mseg_semantic')
+import mseg_semantic.tool.inference_task
+print(dir(mseg_semantic.tool.inference_task))
+from mseg_semantic.tool.inference_task import SemSeg
+
 # import and check 
 SuperPointFeature2D = import_from('feature_superpoint', 'SuperPointFeature2D')         
 TfeatFeature2D = import_from('feature_tfeat', 'TfeatFeature2D')     
@@ -144,6 +149,8 @@ class FeatureManager(object):
         self.keypoint_filter_type = KeyPointFilterTypes.SAT            # default keypoint-filter type 
         self.need_nms = False                                          # need or not non-maximum suppression of keypoints         
         self.keypoint_nms_filter_type = KeyPointFilterTypes.KDT_NMS    # default keypoint-filter type if NMS is needed 
+        self.seg_inference = SemSeg()
+
 
         # initialize sigmas for keypoint levels (used for SLAM)
         self.init_sigma_levels()
@@ -919,6 +926,7 @@ class FeatureManager(object):
     # detect keypoints and their descriptors
     # out: kps, des 
     def detectAndCompute(self, frame, mask=None, filter = True):
+        rgb_frame = frame.copy()
         if not self.need_color_image and frame.ndim>2:     # check if we have to convert to gray image 
             frame = cv2.cvtColor(frame,cv2.COLOR_RGB2GRAY)  
         if self.use_pyramid_adaptor:  
@@ -958,6 +966,11 @@ class FeatureManager(object):
                     print('descriptor: ', self.descriptor_type.name, ', #features: ', len(kps))   
         # filter keypoints   
         filter_name = 'NONE'
+        bg_mask = self.seg_inference.segment(rgb_frame)
+        bg_mask = np.logical_not(bg_mask)
+        kps = [kp for kp in kps if bg_mask[int(kp.pt[1]), int(kp.pt[0])]]
+        des = [d for i, d in enumerate(des) if bg_mask[int(kps[i].pt[1]), int(kps[i].pt[0])]]
+        
         if filter:                                                                 
             kps, des, filter_name  = self.filter_keypoints(self.keypoint_filter_type, frame, kps, des)                                                              
         if self.detector_type == FeatureDetectorTypes.SIFT or \
@@ -966,7 +979,7 @@ class FeatureManager(object):
             unpackSiftOctaveKps(kps, method=UnpackOctaveMethod.INTRAL_LAYERS)           
         if kVerbose:
             print('detector:',self.detector_type.name,', descriptor:', self.descriptor_type.name,', #features:', len(kps),' (#ref:', self.num_features, '), [kp-filter:',filter_name,']')                                         
-        self.debug_print(kps)             
+        self.debug_print(kps)          
         return kps, des             
  
  
