@@ -74,7 +74,8 @@ if __name__ == "__main__":
     # select your tracker configuration (see the file feature_tracker_configs.py) 
     # LK_SHI_TOMASI, LK_FAST
     # SHI_TOMASI_ORB, FAST_ORB, ORB, BRISK, AKAZE, FAST_FREAK, SIFT, ROOT_SIFT, SURF, SUPERPOINT, FAST_TFEAT
-    tracker_config = FeatureTrackerConfigs.LK_SHI_TOMASI
+    #tracker_config = FeatureTrackerConfigs.LK_SHI_TOMASI
+    tracker_config = FeatureTrackerConfigs.SIFT
     tracker_config['num_features'] = num_features
     
     feature_tracker = feature_tracker_factory(**tracker_config)
@@ -104,11 +105,11 @@ if __name__ == "__main__":
     while dataset.isOk():
 
         img = dataset.getImage(img_id)
-        mask = dataset.getMask(img_id)
+        # mask = dataset.getMask(img_id)
 
         if img is not None:
 
-            vo.track(img, img_id, mask)  # main VO function 
+            vo.track(img, img_id, mask=None)  # main VO function 
 
             if(img_id > 2):	       # start drawing from the third image (when everything is initialized and flows in a normal way)
 

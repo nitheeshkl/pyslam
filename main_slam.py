@@ -155,7 +155,8 @@ if __name__ == "__main__":
         
         # get keys 
         key = matched_points_plt.get_key()  
-        key_cv = cv2.waitKey(1) & 0xFF    
+        #key_cv = cv2.waitKey(1) & 0xFF
+        key_cv = ord(key)
         
         # manage interface infos  
         

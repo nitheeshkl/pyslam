@@ -477,6 +477,7 @@ class Frame(FrameBase):
     # draw tracked features on the image for selected keypoint indexes 
     def draw_feature_trails(self, img, kps_idxs, trail_max_length=9):
         img = img.copy()
+        from IPython import embed; embed()
         with self._lock_features:
             uvs = np.rint(self.kps[kps_idxs]).astype(np.intp) # image keypoints coordinates  # use distorted coordinates when drawing on distorted original image           
             # for each keypoint idx

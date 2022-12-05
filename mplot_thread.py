@@ -101,7 +101,7 @@ class Mplot2d:
             self.plot_refresh(lock)
 
     def on_key_press(self, event):
-        #print(mp.current_process().name,"key event pressed...", self._key)     
+        print(mp.current_process().name,"key event pressed...", event.key)
         self.key.value = ord(event.key) # conver to int 
         
     def on_key_release(self, event):
