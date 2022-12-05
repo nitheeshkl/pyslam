@@ -131,9 +131,12 @@ class VisualOdometry(object):
         kp_cur_u = self.cam.undistort_points(kps_cur)	        
         self.kpn_ref = self.cam.unproject_points(kp_ref_u)
         self.kpn_cur = self.cam.unproject_points(kp_cur_u)
+
         if kUseEssentialMatrixEstimation:
             # the essential matrix algorithm is more robust since it uses the five-point algorithm solver by D. Nister (see the notes and paper above )
             E, self.mask_match = cv2.findEssentialMat(self.kpn_cur, self.kpn_ref, focal=1, pp=(0., 0.), method=cv2.RANSAC, prob=kRansacProb, threshold=kRansacThresholdNormalized)
+            E = np.ascontiguousarray(E)
+            print(E, kps_ref.shape, kps_cur.shape)
         else:
             # just for the hell of testing fundamental matrix fitting ;-) 
             F, self.mask_match = self.computeFundamentalMatrix(kp_cur_u, kp_ref_u)
@@ -146,7 +149,7 @@ class VisualOdometry(object):
         # only detect on the current image 
         self.kps_ref, self.des_ref = self.feature_tracker.detectAndCompute(self.cur_image)
         # convert from list of keypoints to an array of points 
-        self.kps_ref = np.array([x.pt for x in self.kps_ref], dtype=np.float32) 
+        self.kps_ref = np.array([x.pt for x in self.kps_ref], dtype=np.float32)
         self.draw_img = self.drawFeatureTracks(self.cur_image)
 
     def processFrame(self, frame_id):
@@ -154,6 +157,12 @@ class VisualOdometry(object):
         self.timer_feat.start()
         self.track_result = self.feature_tracker.track(self.prev_image, self.cur_image, self.kps_ref, self.des_ref)
         self.timer_feat.refresh()
+
+        if self.track_result.kps_ref_matched.shape[0] < 8:
+            self.processFirstFrame()
+            self.track_result = self.feature_tracker.track(self.prev_image, self.cur_image, self.kps_ref, self.des_ref)
+
+
         # estimate pose 
         self.timer_pose_est.start()
         R, t = self.estimatePose(self.track_result.kps_ref_matched, self.track_result.kps_cur_matched)     
@@ -178,25 +187,35 @@ class VisualOdometry(object):
         self.draw_img = self.drawFeatureTracks(self.cur_image) 
         # check if we have enough features to track otherwise detect new ones and start tracking from them (used for LK tracker) 
         if (self.feature_tracker.tracker_type == FeatureTrackerTypes.LK) and (self.kps_ref.shape[0] < self.feature_tracker.num_features): 
-            self.kps_cur, self.des_cur = self.feature_tracker.detectAndCompute(self.cur_image, mask = (self.cur_mask == 0).astype(np.uint8))
+            self.kps_cur, self.des_cur = self.feature_tracker.detectAndCompute(self.cur_image)
             self.kps_cur = np.array([x.pt for x in self.kps_cur], dtype=np.float32) # convert from list of keypoints to an array of points   
             if kVerbose:     
                 print('# new detected points: ', self.kps_cur.shape[0])                  
         
-        bg_mask = (self.cur_mask == 0)
+        bg_mask = (self.cur_mask != 0)
         #bg_mask = np.ones_like(bg_mask)
-        print(self.kps_cur.shape, self.kps_cur[:, 0].max(), self.kps_cur[:, 1].max(), self.cur_mask.shape)
+        print(self.kps_cur.shape, self.kps_ref.shape, self.kps_cur[:, 0].max(), self.kps_cur[:, 1].max(), self.cur_mask.shape)
 
         print("Total bg pixels: ", bg_mask.sum(), np.prod(bg_mask.shape))
         self.filtered_kps = [kp for kp in self.kps_cur if bg_mask[int(kp[1]), int(kp[0])]]
+
+        if len(self.filtered_kps) < 10:
+            self.filtered_kps = self.kps_cur[:10]
+            print("Insufficient kpts")
+
         self.filtered_kps = np.array(self.filtered_kps)
 
         #self.filtered_kps = self.kps_cur
 
-        print("Des cur is: ", self.des_cur)
-        if self.des_cur:
-            self.des_cur = [d for i, d in enumerate(self.des_cur) if bg_mask[int(self.kps_cur[i, 1]), int(self.kps_cur[i, 0])]]
-            self.des_ref = np.array(self.des_cur)
+        if self.des_cur is not None:
+            self.des = [d for i, d in enumerate(self.des_cur) if bg_mask[int(self.kps_cur[i, 1]), int(self.kps_cur[i, 0])]]
+
+            if len(self.des) < 10:
+                self.des = self.des_cur[:10]
+
+            self.des_ref = np.array(self.des)
+            #self.des_ref = self.des_cur
+
 
 
         print("Keypoints after filtering: ", len(self.filtered_kps))
@@ -258,7 +277,9 @@ class VisualOdometry(object):
             self.init_history = False 
         if (self.t0_est is not None) and (self.t0_gt is not None):             
             p = [self.cur_t[0]-self.t0_est[0], self.cur_t[1]-self.t0_est[1], self.cur_t[2]-self.t0_est[2]]   # the estimated traj starts at 0
+            #p = [self.cur_t[0], self.cur_t[1], self.cur_t[2]]   # the estimated traj starts at 0
             self.traj3d_est.append(p)
             pg = [self.trueX-self.t0_gt[0], self.trueY-self.t0_gt[1], self.trueZ-self.t0_gt[2]]  # the groudtruth traj starts at 0  
+            #pg = [self.trueX, self.trueY, self.trueZ]  # the groudtruth traj starts at 0  
             self.traj3d_gt.append(pg)     
             self.poses.append(poseRt(self.cur_R, p))   

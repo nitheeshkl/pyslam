@@ -140,7 +140,8 @@ class Mplot2d:
         #We need to draw *and* flush
         if not kUseFigCanvasDrawIdle:
             self.fig.canvas.draw()
-        self.fig.canvas.flush_events()        
+        self.fig.canvas.flush_events()
+        self.fig.savefig(f'{self.title}.png')
 
     def draw(self, xy_signal, name, color='r', marker='.'):    
         if self.queue is None:
