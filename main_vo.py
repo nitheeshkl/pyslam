@@ -74,7 +74,9 @@ if __name__ == "__main__":
     # select your tracker configuration (see the file feature_tracker_configs.py) 
     # LK_SHI_TOMASI, LK_FAST
     # SHI_TOMASI_ORB, FAST_ORB, ORB, BRISK, AKAZE, FAST_FREAK, SIFT, ROOT_SIFT, SURF, SUPERPOINT, FAST_TFEAT
-    tracker_config = FeatureTrackerConfigs.LK_SHI_TOMASI
+    #tracker_config = FeatureTrackerConfigs.LK_SHI_TOMASI
+    tracker_config = FeatureTrackerConfigs.SIFT
+
     tracker_config['num_features'] = num_features
     
     feature_tracker = feature_tracker_factory(**tracker_config)
@@ -96,15 +98,18 @@ if __name__ == "__main__":
 
     is_draw_err = True 
     err_plt = Mplot2d(xlabel='img id', ylabel='m',title='error')
+    err_norm_plt = Mplot2d(xlabel='img id', ylabel='norm',title='error_norm')
 
     is_draw_matched_points = True 
     matched_points_plt = Mplot2d(xlabel='img id', ylabel='# matches',title='# matches')
 
     img_id = 0
+    frame_skip = 30 # Number of frames to skip
     while dataset.isOk():
 
         img = dataset.getImage(img_id)
         mask = dataset.getMask(img_id)
+        #mask = None
 
         if img is not None:
 
@@ -142,7 +147,12 @@ if __name__ == "__main__":
                     err_plt.draw(errx,'err_x',color='g')
                     err_plt.draw(erry,'err_y',color='b')
                     err_plt.draw(errz,'err_z',color='r')
-                    err_plt.refresh()    
+                    err_plt.refresh()   
+
+                    # L2 norm error
+                    norm = (x_true - x) **2 + (y_true - y) **2 + (z_true - z) **2
+                    err_norm_plt.draw([img_id, norm**0.5], 'L2 norm', color='r')
+                    err_norm_plt.refresh()   
 
                 if is_draw_matched_points:
                     matched_kps_signal = [img_id, vo.num_matched_kps]
@@ -159,7 +169,7 @@ if __name__ == "__main__":
         # press 'q' to exit!
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        img_id += 1
+        img_id += frame_skip
 
 
     #print('press a key in order to exit...')
@@ -175,6 +185,8 @@ if __name__ == "__main__":
             viewer3D.quit()
     if is_draw_err:
         err_plt.quit()
+        err_norm_plt.quit()
+
     if is_draw_matched_points is not None:
         matched_points_plt.quit()
                 
