@@ -36,7 +36,8 @@
 	url = https://github.com/nianticlabs/monodepth2.git
 [submodule "thirdparty/mseg-semantic"]
 	path = thirdparty/mseg-semantic
-	url = https://github.com/mseg-dataset/mseg-semantic.git
+	url = https://github.com/nitheeshkl/mseg-semantic.git
+	branch = van
 [submodule "thirdparty/mseg-api"]
 	path = thirdparty/mseg-api
 	url = https://github.com/mseg-dataset/mseg-api.git
