@@ -20,7 +20,7 @@
 import sys
 import numpy as np
 from enum import Enum
-
+from scipy.spatial.transform import Rotation
 
 class GroundTruthType(Enum):
     NONE = 1
@@ -120,6 +120,7 @@ class KittiGroundTruth(GroundTruth):
         super().__init__(path, name, associations, type)
         self.scale = kScaleKitti
         self.filename=path + '/poses/' + name + '.txt'   # N.B.: this may depend on how you deployed the groundtruth files
+        print("using file ", self.filename)
         with open(self.filename) as f:
             self.data = f.readlines()
             self.found = True
@@ -135,8 +136,12 @@ class KittiGroundTruth(GroundTruth):
         x = self.scale*float(ss[3])
         y = self.scale*float(ss[7])
         z = self.scale*float(ss[11])
+
+
+        rot = [ss[0], ss[1], ss[2], ss[4], ss[5], ss[6], ss[8], ss[9], ss[10]]
+        rot = np.array([self.scale * float(r) for r in rot]).reshape((3, 3))
         abs_scale = np.sqrt((x - x_prev)*(x - x_prev) + (y - y_prev)*(y - y_prev) + (z - z_prev)*(z - z_prev))
-        return x,y,z,abs_scale
+        return x,y,z,rot,abs_scale
 
 
 class TumGroundTruth(GroundTruth):
@@ -175,6 +180,7 @@ class TumGroundTruth(GroundTruth):
         z = self.scale*float(ss[3])
 
         rot = [self.scale*float(ss[4+i]) for i in range(4)]
+        rot = Rotation.from_quat(rot).as_matrix()
 
         abs_scale = np.sqrt((x - x_prev)*(x - x_prev) + (y - y_prev)*(y - y_prev) + (z - z_prev)*(z - z_prev))
         return x,y,z,rot,abs_scale
