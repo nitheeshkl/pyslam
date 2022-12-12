@@ -51,6 +51,11 @@ from feature_tracker_configs import FeatureTrackerConfigs
 from parameters import Parameters
 import multiprocessing as mp
 
+from camera_pose import CameraPose
+from map_point import MapPoint
+import quick_utils
+from scipy.spatial.transform import Rotation
+
 
 if __name__ == "__main__":
 
@@ -101,6 +106,20 @@ if __name__ == "__main__":
     do_step = False
     is_paused = False
 
+    world_points = []
+    camera_params = {}
+    camera_params['height'] = config.cam_settings['Camera.height']
+    camera_params['width'] = config.cam_settings['Camera.width']
+    camera_params['fx'] = config.cam_settings['Camera.fx']
+    camera_params['fy'] = config.cam_settings['Camera.fy']
+    camera_params['x_offset'] = config.cam_settings['Camera.cx']
+    camera_params['y_offset'] = config.cam_settings['Camera.cy']
+    cam_pose = CameraPose()
+
+    img = dataset.getImageColor(0)
+    H, W, C = img.shape
+    rot, trans = None, None
+
     img_id = 0  #180, 340, 400   # you can start from a desired frame id if needed
     while dataset.isOk():
 
@@ -109,6 +128,13 @@ if __name__ == "__main__":
             print('image: ', img_id)
             img = dataset.getImageColor(img_id)
             mask = dataset.getMask(img_id)
+            depth = dataset.getDepth(img_id)
+            # trans, rot = dataset.getPose(img_id) # trans [tx, ty, tz], rot [qx, qy, qz, qw]
+
+            if slam.tracking.cur_R is not None and slam.tracking.cur_t is not None:
+                rot = Rotation.from_matrix(slam.tracking.cur_R).as_quat().tolist()
+                trans = slam.tracking.cur_t
+
             if img is None:
                 print('image is empty')
                 getchar()
@@ -134,9 +160,32 @@ if __name__ == "__main__":
                     is_draw_err_rot = False
 
 
+
+                # Dense reconstruction -- add points on map
+                if rot is not None and trans is not None and img_id % 50 == 0:
+
+                    depth[mask == 255] = 0.0
+                    depth *= 1000000
+                    depth_flat = depth.reshape((H*W, 1))
+                    cam_points = quick_utils.compute_xyz(depth, camera_params)
+                    cam_pose.set_from_quaternion_and_position(np.array(rot), np.array(trans))
+                    cam2world = np.linalg.pinv(cam_pose.Rcw)
+                    pts = (cam_points - cam_pose.tcw.reshape((1, 3))) @ cam2world
+                    colors = img
+
+                    # for i in np.random.randint(H//8, 3*H//4):
+                    #     for j in np.random.randint(W//8, 3*W//4):
+                    for i in range(0, H):
+                        for j in range(0, W):
+                            mp = MapPoint(pts[i, j].tolist(), colors[i, j].tolist())
+                            world_points.append(mp)
+                            # slam.map.add_point(mp)
+
+
                 # 3D display (map display)
                 if viewer3D is not None:
-                    viewer3D.draw_map(slam)
+                    print("dense ", len(world_points))
+                    viewer3D.draw_map(slam, world_points)
 
                 img_draw = slam.map.draw_feature_trails(img)
 
