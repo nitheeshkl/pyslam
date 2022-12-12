@@ -266,7 +266,7 @@ class Viewer3D(object):
         pangolin.FinishFrame()
 
 
-    def draw_map(self, slam):
+    def draw_map(self, slam, world_pts=None):
         if self.qmap is None:
             return
         map = slam.map 
@@ -290,9 +290,15 @@ class Viewer3D(object):
 
         num_map_points = map.num_points()
         if num_map_points>0:
-            for i,p in enumerate(map.get_points()):                
+            for i,p in enumerate(map.get_points()):    
                 map_state.points.append(p.pt)           
                 map_state.colors.append(np.flip(p.color))              
+            
+            if world_pts is not None:
+                for i,p in enumerate(world_pts):                
+                    map_state.points.append(p.pt)           
+                    map_state.colors.append(np.flip(p.color))              
+
         map_state.points = np.array(map_state.points)          
         map_state.colors = np.array(map_state.colors)/256. 
         

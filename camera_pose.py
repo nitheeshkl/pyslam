@@ -73,7 +73,7 @@ class CameraPose(object):
               
     # set from orientation (g2o.Quaternion()) and position (3D vector)    
     def set_from_quaternion_and_position(self,quaternion,position):
-        self.set(g2o.Isometry3d(quaternion, position))       
+        self.set(g2o.Isometry3d(g2o.Quaternion(quaternion), position))       
         
     # set from 4x4 homogeneous transformation matrix Tcw  (pc_ = Tcw * pw_)
     def set_from_matrix(self, Tcw):

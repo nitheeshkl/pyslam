@@ -78,6 +78,8 @@ class PinholeCamera(Camera):
     def unproject_points(self, uvs):
         return np.dot(self.Kinv, add_ones(uvs).T).T[:, 0:2]        
 
+    def unproject_points3(self, uvs):
+        return np.dot(self.Kinv, add_ones(uvs).T).T[:, 0:3]        
     # in:  uvs [Nx2]
     # out: uvs_undistorted array [Nx2] of undistorted coordinates  
     def undistort_points(self, uvs):

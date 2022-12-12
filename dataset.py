@@ -339,7 +339,7 @@ class KittiDataset(Dataset):
         self.fps = 10
         self.image_left_path = '/image_0/'
         self.image_right_path = '/image_1/'           
-        self.timestamps = np.loadtxt(self.path + '/sequences/' + self.name + '/times.txt')
+        self.timestamps = np.loadtxt(self.path + '/sequences/' + self.name + '/timestamps.txt')
         self.max_frame_id = len(self.timestamps)
         print('Processing KITTI Sequence of lenght: ', len(self.timestamps))
         

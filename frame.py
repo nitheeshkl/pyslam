@@ -246,7 +246,7 @@ class Frame(FrameBase):
     descriptor_distance = None       
     descriptor_distances = None  # norm for vectors     
     is_store_imgs = False         
-    def __init__(self, img, camera, pose=None, id=None, timestamp=None, kps_data=None):
+    def __init__(self, img, camera, mask=None, pose=None, id=None, timestamp=None, kps_data=None):
         super().__init__(camera, pose, id, timestamp)    
         
         self._lock_features = RLock()  
@@ -274,8 +274,39 @@ class Frame(FrameBase):
                 self.img = img.copy()  
             else: 
                 self.img = None                    
-            if kps_data is None:   
-                self.kps, self.des = Frame.tracker.detectAndCompute(img)                                                         
+            if True:#kps_data is None:   
+                self.kps, self.des = Frame.tracker.detectAndCompute(img)   
+                print(len(self.kps), self.des.shape)
+                
+                if mask is not None:
+                    bg_mask = (mask == 0)
+                    #bg_mask = np.ones_like(bg_mask)
+
+                    #print("Total bg pixels: ", bg_mask.sum(), np.prod(bg_mask.shape))
+
+                    self.filtered_kps = [kp for kp in self.kps if bg_mask[int(kp.pt[1]), int(kp.pt[0])]]
+
+                    if len(self.filtered_kps) < 10:
+                        self.filtered_kps = self.kps[:10]
+                        print("Insufficient kpts")
+
+                    #self.filtered_kps = np.array(self.filtered_kps)
+
+                    #self.filtered_kps = self.kps_cur
+
+                    if self.des is not None:
+
+                        self.des_ = [self.des[i] for i in range(self.des.shape[0]) if bg_mask[int(self.kps[i].pt[1]), int(self.kps[i].pt[0])]]
+
+                    #if len(self.des_) < 10:
+                    #    self.des = self.des_[:10]
+                        #self.des_ref = self.des_cur
+
+                        print("Keypoints after filtering: ", len(self.filtered_kps))
+                    self.des = np.array(self.des_)
+                    self.kps = self.filtered_kps
+                    print(len(self.kps), self.des.shape)
+
                 # convert from a list of keypoints to arrays of points, octaves, sizes  
                 kps_data = np.array([ [x.pt[0], x.pt[1], x.octave, x.size, x.angle] for x in self.kps ], dtype=np.float32)                            
                 self.kps     = kps_data[:,:2]    
@@ -522,6 +553,7 @@ class Frame(FrameBase):
 # match frames f1 and f2
 # out: a vector of match index pairs [idx1[i],idx2[i]] such that the keypoint f1.kps[idx1[i]] is matched with f2.kps[idx2[i]]
 def match_frames(f1, f2, ratio_test=None):     
+    print(f1.des.shape, f2.des.shape, f1.kps.shape, f2.kps.shape)
     idx1, idx2 = Frame.feature_matcher.match(f1.des, f2.des, ratio_test)
     idx1 = np.asarray(idx1)
     idx2 = np.asarray(idx2)   
